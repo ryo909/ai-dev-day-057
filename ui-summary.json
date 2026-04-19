@@ -1,11 +1,11 @@
 {
   "title": "口頭宿題ログ",
   "archetype": "block_fill",
-  "interaction_model": "fill_missing_request_blocks",
-  "primary_layout": "request_cards_grid",
-  "result_presentation_style": "missing_vs_filled_cards",
-  "palette_motif": "依頼メモサンド",
-  "main_cta": "依頼メモで試す",
-  "intro_variant": "request_frame",
-  "ui_variant": "request"
+  "interaction_model": "edit_followup_rows_with_owner_and_due",
+  "primary_layout": "followup_rows_with_deadline_stack",
+  "result_presentation_style": "deadline_sorted_followup_cards",
+  "palette_motif": "会議ログブルー",
+  "main_cta": "会議後サンプルで試す",
+  "intro_variant": "followup_log",
+  "ui_variant": "filter"
 }
