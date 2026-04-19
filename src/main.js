@@ -1,5 +1,5 @@
 import './style.css';
-const PROFILE = {"day":"Day057","title":"Spoken Follow-up Log","display_name_ja":"口頭宿題ログ","one_sentence":"口頭で決まった宿題を担当と期限つきで残すツール","purpose_line_ja":"口頭で決まった宿題を残しやすくするためのツールです。","use_case_line_ja":"会議直後に担当と期限を整理したい時に使います。","how_it_works_line_ja":"宿題を行で入れると、担当・期限・次の確認順がまとまります。","core_action":"log","family":"followup_log_capture","mechanic":"block_fill","input_style":"task_sequence","output_style":"delay_trace","output_label":"ここで遅れています","audience_promise":"会話直後に宿題を抜けなく残せる。","publish_hook":"決まった内容を自分の言葉で追加・編集すると、担当・期限・次の確認点が一つのログ列に揃う。","engine":"brief_driven","interaction_archetype":"block_fill","page_archetype":"stack_cards","ui_variant":"request","intro_variant":"request_frame","interaction_model":"fill_missing_request_blocks","primary_layout":"request_cards_grid","result_presentation_style":"missing_vs_filled_cards","palette_motif":"依頼メモサンド","main_cta":"依頼メモで試す","input_panel_title":"空いている枠を埋める","sample_panel_title":"依頼メモで試す","guide_panel_title":"抜けを減らすコツ","hero_panel_label":"伝わる依頼文","output_shape":"stack_cards","state_model":"block_fill_state","core_loop":"task_sequence -> block_fill -> delay_trace","component_pack":"stack_cards+delay_trace","scaffold_id":"brief_canvas","single_shot_text_generator":false};
+const PROFILE = {"day":"Day057","title":"Spoken Follow-up Log","display_name_ja":"口頭宿題ログ","one_sentence":"口頭で決まった宿題を担当と期限つきで残すツール","purpose_line_ja":"口頭で決まった宿題を残しやすくするためのツールです。","use_case_line_ja":"会議直後に担当と期限を整理したい時に使います。","how_it_works_line_ja":"宿題を行で入れると、担当・期限・次の確認順がまとまります。","core_action":"log","family":"followup_log_capture","mechanic":"block_fill","input_style":"task_sequence","output_style":"delay_trace","output_label":"まずはこの順番がおすすめです","audience_promise":"会話直後に宿題を抜けなく残せる。","publish_hook":"決まった内容を自分の言葉で追加・編集すると、担当・期限・次の確認点が一つのログ列に揃う。","engine":"brief_driven","interaction_archetype":"block_fill","page_archetype":"stack_cards","ui_variant":"filter","intro_variant":"followup_log","interaction_model":"edit_followup_rows_with_owner_and_due","primary_layout":"followup_rows_with_deadline_stack","result_presentation_style":"deadline_sorted_followup_cards","palette_motif":"会議ログブルー","main_cta":"会議後サンプルで試す","input_panel_title":"宿題行を足す","sample_panel_title":"会議後サンプルで試す","guide_panel_title":"確認順の見どころ","hero_panel_label":"次に確認する宿題","output_shape":"stack_cards","state_model":"followup_log_state","core_loop":"task_sequence -> block_fill -> delay_trace","component_pack":"stack_cards+delay_trace","scaffold_id":"brief_canvas","single_shot_text_generator":false};
 const byId = (id) => document.getElementById(id);
 const state = {
   tokens: ['買う', '待つ', '比べる', '今週中'],
@@ -35,11 +35,42 @@ function boot() {
 }
 
 function setupCommonUi() {
+  applyBriefChrome();
   const btn = byId('sampleFillBtn');
   if (btn) {
     btn.addEventListener('click', runSample);
   }
   updateCaptureReady();
+}
+
+function applyBriefChrome() {
+  const app = byId('app');
+  if (app) {
+    app.dataset.uiVariant = PROFILE.ui_variant || app.dataset.uiVariant || 'filter';
+    app.dataset.primaryLayout = PROFILE.primary_layout || app.dataset.primaryLayout || 'brief_canvas';
+  }
+  const firstView = document.querySelector('.first-view');
+  if (firstView) {
+    [...firstView.classList].filter((name) => name.startsWith('first-view--')).forEach((name) => firstView.classList.remove(name));
+    firstView.classList.add(`first-view--${PROFILE.ui_variant || 'filter'}`);
+  }
+  const briefCanvas = document.querySelector('.brief-canvas');
+  if (briefCanvas) {
+    [...briefCanvas.classList].filter((name) => name.startsWith('brief-canvas--')).forEach((name) => briefCanvas.classList.remove(name));
+    briefCanvas.classList.add(`brief-canvas--${PROFILE.ui_variant || 'filter'}`);
+  }
+  const setText = (selector, value) => {
+    const node = document.querySelector(selector);
+    if (node && value) node.textContent = value;
+  };
+  setText('.first-view__eyebrow', PROFILE.palette_motif);
+  setText('.fv-block--start h2', PROFILE.input_panel_title);
+  setText('.fv-block--preview h2', PROFILE.output_label);
+  setText('.fv-preview-card strong', PROFILE.output_label);
+  setText('#sampleFillBtn', PROFILE.main_cta);
+  const pairValues = document.querySelectorAll('.fv-block--start .fv-pair dd');
+  if (pairValues[0]) pairValues[0].textContent = '宿題 / 担当 / 期限';
+  if (pairValues[1]) pairValues[1].textContent = '会議直後の行を読み込んで並び替える';
 }
 
 function runSample() {
@@ -516,6 +547,10 @@ function setupBriefCanvas() {
   }
   if (key === 'route_trace') {
     setupIntroRoute(root);
+    return;
+  }
+  if (key === 'block_fill' && PROFILE.family === 'followup_log_capture') {
+    setupFollowupLog(root);
     return;
   }
   if (key === 'block_fill') {
@@ -1195,6 +1230,159 @@ function setupRequestFrame(root) {
 
   mountPresetButtons([{ label: 'レビュー依頼', action: () => { cards = clone(presets['レビュー依頼']); render(); } }]);
   state.helpers.runBriefSample = () => { cards = clone(presets['レビュー依頼']); render(); };
+  render();
+}
+
+function setupFollowupLog(root) {
+  const presets = {
+    '会議後': [
+      { task: '見出し3案を詰める', owner: '自分', dueDays: 1, nextCheck: '朝会で共有' },
+      { task: '法務確認を依頼する', owner: '高橋さん', dueDays: 2, nextCheck: '返信が来たら反映' },
+      { task: '画像差し替えを準備する', owner: '外注先', dueDays: 4, nextCheck: '金曜に進捗確認' }
+    ]
+  };
+  let rows = clone(presets['会議後']);
+
+  root.querySelector('#briefInputZone').innerHTML = `
+    <div class="brief-form">
+      <div class="action-row">
+        <input id="followupTask" class="text-input" placeholder="宿題を追加">
+        <input id="followupOwner" class="mini-input" placeholder="担当">
+        <select id="followupDue">
+          <option value="0">今日</option>
+          <option value="1" selected>明日</option>
+          <option value="2">2日後</option>
+          <option value="4">4日後</option>
+        </select>
+        <input id="followupNextCheck" class="mini-input" placeholder="次の確認">
+        <button id="followupAddBtn" class="primary-btn" type="button">宿題を追加</button>
+      </div>
+    </div>
+    <div class="item-grid" id="followupEditor"></div>
+  `;
+  root.querySelector('#briefResultZone').innerHTML = `
+    <div class="delay-list" id="followupQueue"></div>
+    <div class="overflow-list" id="followupLater"></div>
+  `;
+  setResultHint('宿題行を直すたび、期限が近い順のログ列が上から整います。');
+
+  function dueLabel(days) {
+    if (days <= 0) return '今日';
+    if (days === 1) return '明日';
+    return `${days}日後`;
+  }
+
+  function addRow() {
+    const task = (byId('followupTask').value || '').trim();
+    const owner = (byId('followupOwner').value || '').trim();
+    const dueDays = Number(byId('followupDue').value || 0);
+    const nextCheck = (byId('followupNextCheck').value || '').trim();
+    if (!task || !owner) return;
+    rows.push({ task, owner, dueDays, nextCheck: nextCheck || '次回の確認待ち' });
+    byId('followupTask').value = '';
+    byId('followupOwner').value = '';
+    byId('followupNextCheck').value = '';
+    byId('followupDue').value = '1';
+    render();
+  }
+
+  function render() {
+    byId('followupEditor').innerHTML = rows.map((row, idx) => `
+      <div class="item-card">
+        <input class="text-input" data-followup-task="${idx}" value="${escapeHtml(row.task)}">
+        <div class="action-row">
+          <input class="mini-input" data-followup-owner="${idx}" value="${escapeHtml(row.owner)}">
+          <select data-followup-due="${idx}">
+            <option value="0" ${row.dueDays === 0 ? 'selected' : ''}>今日</option>
+            <option value="1" ${row.dueDays === 1 ? 'selected' : ''}>明日</option>
+            <option value="2" ${row.dueDays === 2 ? 'selected' : ''}>2日後</option>
+            <option value="4" ${row.dueDays === 4 ? 'selected' : ''}>4日後</option>
+          </select>
+          <input class="mini-input" data-followup-next="${idx}" value="${escapeHtml(row.nextCheck)}">
+          <button class="assign-btn" data-followup-remove="${idx}" type="button">削除</button>
+        </div>
+      </div>
+    `).join('');
+
+    root.querySelectorAll('[data-followup-task]').forEach((input) => {
+      input.addEventListener('input', () => {
+        rows[Number(input.dataset.followupTask)].task = input.value;
+        renderResult();
+      });
+    });
+    root.querySelectorAll('[data-followup-owner]').forEach((input) => {
+      input.addEventListener('input', () => {
+        rows[Number(input.dataset.followupOwner)].owner = input.value;
+        renderResult();
+      });
+    });
+    root.querySelectorAll('[data-followup-due]').forEach((select) => {
+      select.addEventListener('change', () => {
+        rows[Number(select.dataset.followupDue)].dueDays = Number(select.value);
+        renderResult();
+      });
+    });
+    root.querySelectorAll('[data-followup-next]').forEach((input) => {
+      input.addEventListener('input', () => {
+        rows[Number(input.dataset.followupNext)].nextCheck = input.value;
+        renderResult();
+      });
+    });
+    root.querySelectorAll('[data-followup-remove]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        rows.splice(Number(btn.dataset.followupRemove), 1);
+        render();
+      });
+    });
+    renderResult();
+  }
+
+  function renderResult() {
+    const sorted = [...rows].sort((a, b) => a.dueDays - b.dueDays || a.task.localeCompare(b.task, 'ja'));
+    const urgent = sorted.slice(0, 3);
+    const later = sorted.slice(3);
+    byId('followupQueue').innerHTML = urgent.length
+      ? urgent.map((row, idx) => `
+          <div class="delay-card ${row.dueDays <= 1 ? 'bad' : ''}">
+            <strong>${idx + 1}. ${escapeHtml(row.task)}</strong>
+            <div class="subline">${escapeHtml(row.owner)} / 期限 ${dueLabel(row.dueDays)} / 次は ${escapeHtml(row.nextCheck)}</div>
+          </div>
+        `).join('')
+      : '<div class="empty-state">宿題を足すと、確認順のログ列がここに出ます。</div>';
+    byId('followupLater').innerHTML = later.length
+      ? later.map((row) => `<div class="overflow-pill"><strong>${escapeHtml(row.task)}</strong><div class="subline">${escapeHtml(row.owner)} / ${dueLabel(row.dueDays)}</div></div>`).join('')
+      : '<div class="empty-state">後ろの宿題はありません。</div>';
+
+    const first = sorted[0];
+    setHeroStat(first ? `${dueLabel(first.dueDays)}まで` : '未入力');
+    setStatusCards([
+      { label: '直近の期限', value: first ? dueLabel(first.dueDays) : '未入力' },
+      { label: '担当人数', value: `${new Set(sorted.map((row) => row.owner).filter(Boolean)).size}人` },
+      { label: '宿題数', value: `${sorted.length}件` }
+    ]);
+    setResultLead(first
+      ? '担当と期限が上から揃うので、議事メモを見返すより次の確認順がすぐ決まります。'
+      : '宿題行を足すと、期限順のログ列がここに整います。');
+  }
+
+  byId('followupAddBtn').addEventListener('click', addRow);
+  ['followupTask', 'followupOwner', 'followupNextCheck'].forEach((id) => {
+    byId(id).addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        addRow();
+      }
+    });
+  });
+  byId('followupDue').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      addRow();
+    }
+  });
+
+  mountPresetButtons([{ label: '会議後', action: () => { rows = clone(presets['会議後']); render(); } }]);
+  state.helpers.runBriefSample = () => { rows = clone(presets['会議後']); render(); };
   render();
 }
 
