@@ -1,42 +1,40 @@
-# ai-dev-exp-template
+# Day057 — 口頭宿題ログ
 
-Vite-based single-page template for `ai-dev-day-XXX` repositories.
+> 口頭で決まった宿題を残しやすくするためのツールです。
+>
+> Complexity Tier: medium
+>
+> Selected Components: none
+>
+> Family / Mechanic: followup_log_capture / block_fill
+>
+> Input -> Output: task_sequence -> delay_trace
+>
+> Audience Promise: 会話直後に宿題を抜けなく残せる。
 
-## Required meta.json fields
+## 使い方
 
-- `day` (e.g. `Day001`)
-- `title`
-- `description`
-- `genre`
-- `theme`
-- `story_summary`
+このツールでできること
+口頭で決まった宿題を残しやすくするためのツールです。
 
-## Theme behavior
+こんな時に使います
+会議直後に担当と期限を整理したい時に使います。
 
-- `src/themes.js` defines 8 visual themes.
-- Runtime applies `meta.json.theme` using CSS variables.
-- Day repos should set `theme` with a day-seeded deterministic selector.
+使い方
+1. 宿題を足す
+2. 担当と期限を入れる
+3. 確認順を残す
 
-## Component Packs (tiered build)
+## Story
 
-- Template reads `complexity_tier` / `selected_components` from `meta.json`.
-- `selected_components` is missing: runs as small tier baseline with all packs OFF.
-- Unknown component names are ignored safely.
-- Each pack can be toggled independently and app core flow still works.
+- [制作ストーリー](./STORY.md)
+- Complexity hint: Implement the locked brief with one clear hero interaction and keep the main screenshot readable.
+- Publish hook: 決まった内容を自分の言葉で追加・編集すると、担当・期限・次の確認点が一つのログ列に揃う。
 
-Supported packs:
+## Demo
 
-- `reason_panel`
-- `sample_inputs`
-- `local_storage`
-- `comparison_view`
-- `history_panel`
-- `export_suite`
-- `step_ui`
+🌐 [GitHub Pages](https://ryo909.github.io/ai-dev-day-057/)
 
-### Quality/Fallback integration
+---
 
-- Every pack root includes `data-quality-marker="<pack_name>"` for evaluator detection.
-- Runtime manifest is published to `window.__COMPONENT_PACKS__` and script node `#componentPackManifest`.
-- Static fallback manifest exists at `public/component-pack-manifest.json`.
-- Medium/Large can increase visual depth safely by selecting more packs without changing core logic.
+Day057 / #100日開発

@@ -1,0 +1,11 @@
+{
+  "title": "口頭宿題ログ",
+  "archetype": "block_fill",
+  "interaction_model": "fill_missing_request_blocks",
+  "primary_layout": "request_cards_grid",
+  "result_presentation_style": "missing_vs_filled_cards",
+  "palette_motif": "依頼メモサンド",
+  "main_cta": "依頼メモで試す",
+  "intro_variant": "request_frame",
+  "ui_variant": "request"
+}
